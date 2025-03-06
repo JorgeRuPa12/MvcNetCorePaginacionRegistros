@@ -110,5 +110,29 @@ namespace MvcNetCorePaginacionRegistros.Repositories
                 Empleados = empleados
             };
         }
+
+        public async Task<ModelEmpleadosDepartamento> GetModelEmpleadosDepartamentoAsync(int iddepartamento, int posicion)
+        {
+            Departamento dept = this.context.Departamentos.Where(z => z.IdDepartemento == iddepartamento).FirstOrDefault();
+            string sql = "SP_GRUPO_EMPLEADOS_DEPARTAMENTO @posicion, @dept, @registros out";
+
+            SqlParameter pamPosicion = new SqlParameter("@posicion", posicion);
+            SqlParameter pamDepartamento = new SqlParameter("@dept", iddepartamento);
+            SqlParameter pamRegistros = new SqlParameter("@registros", 0);
+            pamRegistros.Direction = System.Data.ParameterDirection.Output;
+
+            var consulta = this.context.Empleados.FromSqlRaw(sql, pamPosicion, pamDepartamento, pamRegistros);
+            List<Empleado> empleados = await consulta.ToListAsync();
+            int registros = int.Parse(pamRegistros.Value.ToString());
+
+            ModelEmpleadosDepartamento model = new ModelEmpleadosDepartamento
+            {
+                Dept = dept,
+                Empleados = empleados,
+                NumRegistros = registros
+            };
+
+            return model;
+        }
     }
 }
